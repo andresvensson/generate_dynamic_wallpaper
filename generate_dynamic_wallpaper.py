@@ -32,7 +32,8 @@ IMAGES = [
 ]
 
 # Where GNOME expects the XML wallpaper file
-OUTPUT_XML = "/usr/share/backgrounds/Dynamic_Wallpapers/Lakeside_dynamic.xml"
+#OUTPUT_XML = "/usr/share/backgrounds/Dynamic_Wallpapers/Lakeside_dynamic.xml"
+OUTPUT_XML = "Lakeside_dynamic.xml"
 
 # Transition time in seconds (e.g. 2 minutes = 120 sec)
 TRANSITION_DURATION = 120
@@ -42,7 +43,10 @@ TRANSITION_DURATION = 120
 # ----------------------------------------------------------
 
 def parse_hhmm(s):
-    return datetime.strptime(s, "%H:%M")
+    return datetime.strftime(s, "%H:%M")
+    #s = str(s)
+    #return s.time()
+    #return datetime.strptime(s, "%H:%M")
 
 def prettify(elem):
     """Return a pretty-printed XML string"""
@@ -51,6 +55,7 @@ def prettify(elem):
     return reparsed.toprettyxml(indent="    ")
 
 def seconds_between(t1, t2):
+    print("T1", t1, "T2", t2)
     delta = (t2 - t1).total_seconds()
     while delta < 0:
         delta += 24 * 3600
@@ -64,11 +69,11 @@ def main():
     # 1. Fetch daylight info
     print("Fetching sunrise/sunset info...")
     data = get_data()
-    sunrise = parse_hhmm(data["sunrise"])
-    sunset  = parse_hhmm(data["sunset"])
+    # sunrise = parse_hhmm(data["sunrise"])
+    # sunset  = parse_hhmm(data["sunset"])
 
-    print("Sunrise:", sunrise.time())
-    print("Sunset: ", sunset.time())
+    sunrise = data["sunrise"]
+    sunset  = data["sunset"]
 
     # 2. Build XML structure
     background = Element("background")
@@ -89,12 +94,19 @@ def main():
     dusk_imgs   = IMAGES[8:10]
     night_imgs  = IMAGES[10:12]
 
+    # added
+    zero_ts = sunrise.replace(hour=0, minute=0)
+    # -----
+
     segments = [
-        ("dawn",   dawn_imgs,  0, sunrise),
+        #("dawn",   dawn_imgs,  0, sunrise),
+        ("dawn", dawn_imgs, zero_ts, sunrise),
         ("day",    day_imgs,   sunrise, sunset),
         ("dusk",   dusk_imgs,  sunset, sunset.replace(hour=(sunset.hour+1)%24)),  # 1 hr after sunset
         ("night",  night_imgs, sunset.replace(hour=(sunset.hour+1)%24), sunrise.replace(hour=(sunrise.hour+24)%24)),
     ]
+
+    print("SEGMENTS:", segments)
 
     # 3. Build XML sections for each segment
     current_time = datetime(2025, 1, 1, 0, 0, 0)  # start of slideshow
@@ -134,7 +146,34 @@ def main():
 
 def get_data() -> dict:
     print("Hej!")
-    d = {"sunrise": "07:00", "sunset": "20:00"}
+
+    # raw = {"sunrise": "07:00", "sunset": "20:00"}
+    #
+    d = {}
+    #
+    today = datetime.today()
+    d['sunrise'] = today.replace(hour=7, minute=0)
+    d['sunset'] = today.replace(hour=20, minute=0)
+    #
+    # h1, m1 = map(int, raw["sunrise"].split(":"))
+    # h2, m2 = map(int, raw["sunset"].split(":"))
+    #
+    # sunrise = today.replace(hour=h1, minute=m1, second=0)
+    # sunset = today.replace(hour=h2, minute=m2, second=0)
+
+
+    #d = {"sunrise": "07:00", "sunset": "20:00"}
+
+    sr = "2025-11-22 08:00:00"
+    ss = "2025-11-22 20:00:00"
+
+    # d = datetime.today()
+    # print("DATA:", d)
+    # d = datetime.now()
+    # d = d.hour
+    # print("DATA:", d)
+    # d = datetime.now().replace(hour=7, minute=0)
+    print("DATA:", d)
 
     # initiate sqlite3
     # get from server
